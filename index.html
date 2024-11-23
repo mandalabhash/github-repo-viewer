@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSC403-PPTs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .column {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .column:first-child {
+            flex: 1;
+        }
+        .column:last-child {
+            flex: 3;
+        }
+        .repo-details {
+            text-align: center;
+        }
+        .repo-details img {
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 10px;
+        }
+        .repo-details h2 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+        .repo-details a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .repo-details a:hover {
+            text-decoration: underline;
+        }
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .file-list li {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .file-list a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .file-list a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .column {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>CSC403-PPTs</h1>
+    <div class="container">
+        <div class="column">
+            <div class="repo-details" id="repoDetails">
+                <!-- Repo owner details will be added here -->
+            </div>
+        </div>
+        <div class="column">
+            <p>Click on a file to view its content as a webpage:</p>
+            <ul class="file-list" id="fileList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const repoOwner = "nautical";
+        const repoName = "lpu_presentation";
+        const branch = "main"; // Default branch to fetch files from
+
+        async function fetchRepoDetails() {
+            const userApiUrl = `https://api.github.com/users/${repoOwner}`;
+
+            try {
+                const response = await fetch(userApiUrl);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch repository owner details");
+                }
+
+                const userDetails = await response.json();
+                const repoDetails = document.getElementById("repoDetails");
+
+                repoDetails.innerHTML = `
+                    <img src="${userDetails.avatar_url}" alt="${userDetails.login}">
+                    <h2>${userDetails.login}</h2>
+                    <p><a href="${userDetails.html_url}" target="_blank">View Profile</a></p>
+                `;
+            } catch (error) {
+                console.error("Error fetching repository owner details:", error);
+                document.getElementById("repoDetails").innerHTML = `<p>Error loading owner details. Please try again later.</p>`;
+            }
+        }
+
+        async function fetchFileList() {
+            const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch repository content");
+                }
+
+                const files = await response.json();
+                const fileList = document.getElementById("fileList");
+
+                files.forEach(file => {
+                    if (file.type === "file" && file.name.endsWith(".html")) {
+                        const listItem = document.createElement("li");
+                        const link = document.createElement("a");
+
+                        link.textContent = file.name;
+                        link.addEventListener("click", async () => {
+                            const fileResponse = await fetch(file.download_url);
+                            const fileContent = await fileResponse.text();
+                            const newWindow = window.open();
+                            newWindow.document.write(fileContent);
+                            newWindow.document.close();
+                        });
+
+                        listItem.appendChild(link);
+                        fileList.appendChild(listItem);
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching file list:", error);
+                document.getElementById("fileList").innerHTML = `<li>Error loading files. Please try again later.</li>`;
+            }
+        }
+
+        // Fetch repo details and file list on page load
+        fetchRepoDetails();
+        fetchFileList();
+    </script>
+</body>
+</html>
